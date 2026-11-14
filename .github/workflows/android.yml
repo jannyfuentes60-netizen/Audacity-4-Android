@@ -52,6 +52,18 @@ jobs:
           gradle.write_text(source)
           PY
 
+      - name: Replace retired JCenter-only SSH library version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/pubkeyGenerator/build.gradle")
+          source = gradle.read_text()
+          old = "org.connectbot:sshlib:2.2.13"
+          if old not in source:
+              raise SystemExit("Expected legacy SSH dependency was not found")
+          gradle.write_text(source.replace(old, "org.connectbot:sshlib:2.2.23"))
+          PY
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
