@@ -247,6 +247,15 @@ jobs:
           app_source = app_source.replace('apply plugin: "kotlin-android-extensions"', "")
           app_gradle.write_text(app_source)
 
+          # Remove the matching obsolete androidExtensions DSL block from the module script.
+          import re
+          module_gradle = root / "UserLAndLibrary/app/build.gradle"
+          module_source = module_gradle.read_text()
+          module_source, count = re.subn(r"(?ms)^androidExtensions\\s*\\{.*?^\\}\\s*", "", module_source, count=1)
+          if count != 1:
+              raise SystemExit("Could not remove obsolete androidExtensions DSL block")
+          module_gradle.write_text(module_source)
+
           # Convert old Parcelize imports and enable the replacement plugin only when needed.
           for source_file in (root / "UserLAndLibrary/app/src").rglob("*.kt"):
               kotlin_source = source_file.read_text(errors="replace")
