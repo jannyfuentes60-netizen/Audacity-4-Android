@@ -108,6 +108,31 @@ jobs:
           path.write_text(source)
           PY
 
+      - name: Enable legacy UserLAnd build features and compatible Kotlin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("vendor/Andacious")
+          # UserLAndLibrary still depends on Kotlin Android Extensions synthetic views.
+          # Kotlin 1.8+ removed that plugin, so keep the compatible 1.7.22 toolchain.
+          for gradle in (root / "build.gradle", root / "UserLAndLibrary/build.gradle"):
+              source = gradle.read_text()
+              source = re.sub(r"kotlin_version\\s*=\\s*['\\\"]1\\.[^'\\\"]+['\\\"]", "kotlin_version = '1.7.22'", source)
+              gradle.write_text(source)
+
+          # AGP 8 disables BuildConfig generation by default for library modules.
+          module = root / "UserLAndLibrary/app/build.gradle"
+          source = module.read_text()
+          if "buildFeatures" not in source:
+              source = re.sub(r"(android\\s*\\{)", r"\\1\\n    buildFeatures { buildConfig true }", source, count=1)
+          elif not re.search(r"buildConfig\\s+true", source):
+              source = re.sub(r"(buildFeatures\\s*\\{)", r"\\1\\n        buildConfig true", source, count=1)
+          module.write_text(source)
+          print("Enabled BuildConfig and pinned Kotlin for legacy synthetic-view support")
+          PY
+
       - name: Build debug APK
         working-directory: vendor/Andacious
         run: |
