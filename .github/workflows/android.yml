@@ -234,6 +234,7 @@ jobs:
                   continue
               source = gradle.read_text()
               source = re.sub(r"""kotlin_version\s*=\s*(['"])[0-9][^'"]*\1""", "kotlin_version = '1.9.21'", source)
+              source = source.replace('classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"', 'classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21"')
               gradle.write_text(source)
 
           # Force every Kotlin compiler/plugin artifact to the K1-compatible version
@@ -244,6 +245,13 @@ jobs:
           if "kotlin-compiler-embeddable:1.9.21" not in root_source:
               root_source = root_source.replace("buildscript {\\n", "buildscript {\\n" + force_line, 1)
               root_build.write_text(root_source)
+
+          # Keep the legacy K1 compiler path; Android Extensions is incompatible with K2.
+          props = root / "gradle.properties"
+          props_source = props.read_text()
+          if "kotlin.experimental.tryK2=" not in props_source:
+              props_source += "\nkotlin.experimental.tryK2=false\nkapt.use.k2=false\n"
+          props.write_text(props_source)
 
           # AGP 8 disables BuildConfig generation by default in library modules.
           module = root / "UserLAndLibrary/app/build.gradle"
