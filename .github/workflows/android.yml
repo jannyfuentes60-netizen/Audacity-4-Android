@@ -52,16 +52,21 @@ jobs:
           gradle.write_text(source)
           PY
 
-      - name: Replace retired JCenter-only SSH library version
+      - name: Restore legacy SSH dependency from a JCenter mirror
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          gradle = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/pubkeyGenerator/build.gradle")
+          import re
+          root = Path("vendor/Andacious/UserLAndLibrary")
+          gradle = root / "build.gradle"
           source = gradle.read_text()
-          old = "org.connectbot:sshlib:2.2.13"
-          if old not in source:
-              raise SystemExit("Expected legacy SSH dependency was not found")
-          gradle.write_text(source.replace(old, "org.connectbot:sshlib:2.2.23"))
+          mirror = "maven { url 'https://maven.aliyun.com/repository/jcenter' }"
+          source = re.sub(r"(repositories\s*\{)", r"\1\n        " + mirror, source, count=2)
+          gradle.write_text(source)
+
+          pubkey = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/pubkeyGenerator/build.gradle")
+          source = pubkey.read_text().replace("org.connectbot:sshlib:2.2.23", "org.connectbot:sshlib:2.2.13")
+          pubkey.write_text(source)
           PY
 
       - name: Set up Java 17
