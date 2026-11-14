@@ -115,22 +115,29 @@ jobs:
           import re
 
           root = Path("vendor/Andacious")
-          # UserLAndLibrary still depends on Kotlin Android Extensions synthetic views.
-          # Kotlin 1.8+ removed that plugin, so keep the compatible 1.7.22 toolchain.
+          # Kotlin Android Extensions synthetic views were removed in Kotlin 2.x.
+          # Keep the legacy UserLAnd source on a compatible Kotlin plugin.
           for gradle in (root / "build.gradle", root / "UserLAndLibrary/build.gradle"):
+              if not gradle.exists():
+                  continue
               source = gradle.read_text()
-              source = re.sub(r"kotlin_version\\s*=\\s*['\\\"]1\\.[^'\\\"]+['\\\"]", "kotlin_version = '1.7.22'", source)
+              source = re.sub(r"kotlin_version\s*=\s*(['\"])1\.[^'\"]+\1", "kotlin_version = '1.7.22'", source)
               gradle.write_text(source)
 
-          # AGP 8 disables BuildConfig generation by default for library modules.
+          # AGP 8 disables BuildConfig generation by default in library modules.
           module = root / "UserLAndLibrary/app/build.gradle"
           source = module.read_text()
-          if "buildFeatures" not in source:
-              source = re.sub(r"(android\\s*\\{)", r"\\1\\n    buildFeatures { buildConfig true }", source, count=1)
-          elif not re.search(r"buildConfig\\s+true", source):
-              source = re.sub(r"(buildFeatures\\s*\\{)", r"\\1\\n        buildConfig true", source, count=1)
-          module.write_text(source)
-          print("Enabled BuildConfig and pinned Kotlin for legacy synthetic-view support")
+          if not re.search(r"buildConfig\s+(?:true|=\s*true)", source):
+              if re.search(r"buildFeatures\s*\{", source):
+                  source, count = re.subn(r"(buildFeatures\s*\{)", r"\1\n        buildConfig true", source, count=1)
+                  if not count:
+                      raise SystemExit("Could not add BuildConfig to existing buildFeatures block")
+              else:
+                  source, count = re.subn(r"(android\s*\{)", r"\1\n    buildFeatures { buildConfig true }", source, count=1)
+                  if not count:
+                      raise SystemExit("Could not locate android block to enable BuildConfig")
+              module.write_text(source)
+          print("BuildConfig generation enabled for UserLAndLibrary/app")
           PY
 
       - name: Build debug APK
