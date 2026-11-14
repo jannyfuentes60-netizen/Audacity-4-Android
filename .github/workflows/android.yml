@@ -52,21 +52,47 @@ jobs:
           gradle.write_text(source)
           PY
 
-      - name: Restore legacy SSH dependency from a JCenter mirror
+      - name: Patch obsolete SSH key encoding API
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          root = Path("vendor/Andacious/UserLAndLibrary")
-          gradle = root / "build.gradle"
-          source = gradle.read_text()
-          mirror = "maven { url 'https://maven.aliyun.com/repository/jcenter' }"
-          source = re.sub(r"(repositories\s*\{)", r"\1\n        " + mirror, source, count=2)
+          gradle = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/pubkeyGenerator/build.gradle")
+          source = gradle.read_text().replace("org.connectbot:sshlib:2.2.13", "org.connectbot:sshlib:2.2.23")
+          source = source.replace("org.connectbot:sshlib:2.2.23", "org.connectbot:sshlib:2.2.23")
           gradle.write_text(source)
 
-          pubkey = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/pubkeyGenerator/build.gradle")
-          source = pubkey.read_text().replace("org.connectbot:sshlib:2.2.23", "org.connectbot:sshlib:2.2.13")
-          pubkey.write_text(source)
+          java = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/pubkeyGenerator/src/main/java/com/iiordanov/pubkeygenerator/PubkeyUtils.java")
+          source = java.read_text()
+          if "import com.trilead.ssh2.packets.TypesWriter;" not in source:
+              source = source.replace("import com.trilead.ssh2.crypto.PEMStructure;\n", "import com.trilead.ssh2.crypto.PEMStructure;\nimport com.trilead.ssh2.packets.TypesWriter;\n")
+          source = source.replace("RSASHA1Verify.encodeSSHRSAPublicKey((RSAPublicKey)pk)", "encodeSshRsaPublicKey((RSAPublicKey)pk)")
+          source = source.replace("DSASHA1Verify.encodeSSHDSAPublicKey((DSAPublicKey)pk)", "encodeSshDsaPublicKey((DSAPublicKey)pk)")
+          marker = "    public static String convertToOpenSSHFormat(PublicKey pk, String origNickname)"
+          helpers = """    private static byte[] encodeSshRsaPublicKey(RSAPublicKey key) throws IOException {
+        TypesWriter writer = new TypesWriter();
+        writer.writeString("ssh-rsa");
+        writer.writeMPInt(key.getPublicExponent());
+        writer.writeMPInt(key.getModulus());
+        return writer.getBytes();
+    }
+
+    private static byte[] encodeSshDsaPublicKey(DSAPublicKey key) throws IOException {
+        DSAParams params = key.getParams();
+        TypesWriter writer = new TypesWriter();
+        writer.writeString("ssh-dss");
+        writer.writeMPInt(params.getP());
+        writer.writeMPInt(params.getQ());
+        writer.writeMPInt(params.getG());
+        writer.writeMPInt(key.getY());
+        return writer.getBytes();
+    }
+
+"""
+          if "private static byte[] encodeSshRsaPublicKey" not in source:
+              if marker not in source:
+                  raise SystemExit("Could not locate OpenSSH key conversion method")
+              source = source.replace(marker, helpers + marker, 1)
+          java.write_text(source)
           PY
 
       - name: Set up Java 17
