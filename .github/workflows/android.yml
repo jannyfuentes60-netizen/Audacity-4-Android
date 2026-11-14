@@ -227,6 +227,15 @@ jobs:
               source = re.sub(r"""kotlin_version\s*=\s*(['"])[0-9][^'"]*\1""", "kotlin_version = '1.9.21'", source)
               gradle.write_text(source)
 
+          # Force every Kotlin compiler/plugin artifact to the K1-compatible version
+          # required by the legacy UserLAnd Android Extensions source.
+          root_build = root / "build.gradle"
+          root_source = root_build.read_text()
+          force_line = "    configurations.classpath.resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21', 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.21'\\n"
+          if "kotlin-compiler-embeddable:1.9.21" not in root_source:
+              root_source = root_source.replace("buildscript {\\n", "buildscript {\\n" + force_line, 1)
+              root_build.write_text(root_source)
+
           # AGP 8 disables BuildConfig generation by default in library modules.
           module = root / "UserLAndLibrary/app/build.gradle"
           source = module.read_text()
