@@ -50,6 +50,16 @@ jobs:
           if "rootProject.ext." in source:
               raise SystemExit("FreeRDP core still references missing root Gradle properties")
           gradle.write_text(source)
+
+          manifest = Path("vendor/Andacious/UserLAndLibrary/remote-desktop-clients/remoteClientLib/jni/libs/deps/FreeRDP/client/Android/Studio/freeRDPCore/src/main/AndroidManifest.xml")
+          xml = manifest.read_text()
+          alias = '<activity-alias\\n            android:name=".presentation.CreateShortcuts"'
+          patched = '<activity-alias\\n            android:exported="true"\\n            android:name=".presentation.CreateShortcuts"'
+          if alias in xml:
+              xml = xml.replace(alias, patched, 1)
+          elif 'android:name=".presentation.CreateShortcuts"' not in xml or 'android:exported="true"' not in xml:
+              raise SystemExit("Could not patch FreeRDP CreateShortcuts activity-alias exported flag")
+          manifest.write_text(xml)
           PY
 
       - name: Patch obsolete SSH key encoding API
