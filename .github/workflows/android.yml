@@ -224,7 +224,7 @@ jobs:
               if not gradle.exists():
                   continue
               source = gradle.read_text()
-              source = re.sub(r"kotlin_version\s*=\s*(['\"])1\.[^'\"]+\1", "kotlin_version = '1.9.21'", source)
+              source = re.sub(r"kotlin_version\s*=\s*(['"])[0-9][^'"]*\1", "kotlin_version = '1.9.21'", source)
               gradle.write_text(source)
 
           # AGP 8 disables BuildConfig generation by default in library modules.
@@ -243,9 +243,14 @@ jobs:
 
           app_gradle = root / "UserLAndLibrary/app/build.gradle"
           app_source = app_gradle.read_text()
-          app_source = app_source.replace("apply plugin: 'kotlin-android-extensions'", "")
-          app_source = app_source.replace('apply plugin: "kotlin-android-extensions"', "")
+          if "kotlin-android-extensions" not in app_source:
+              app_source = app_source.replace("apply plugin: 'kotlin-android'\n", "apply plugin: 'kotlin-android'\n\napply plugin: 'kotlin-android-extensions'\n", 1)
           app_gradle.write_text(app_source)
+
+          # Restore the legacy DSL, now that the compiler is explicitly pinned to Kotlin 1.9.21.
+          if "androidExtensions {" not in app_source:
+              app_source += "\n\nandroidExtensions {\n    experimental = true\n}\n"
+              app_gradle.write_text(app_source)
 
           # Remove the matching obsolete androidExtensions DSL block from the module script.
           import re
