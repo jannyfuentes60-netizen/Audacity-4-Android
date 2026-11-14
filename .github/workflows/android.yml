@@ -78,6 +78,24 @@ jobs:
           print("\n".join(patched) if patched else "No legacy Android namespaces required patching")
           PY
 
+      - name: Remove obsolete Bintray publishing plugins
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path("vendor/Andacious")
+          changed = []
+          for path in root.rglob("build.gradle"):
+              text = path.read_text(errors="replace")
+              updated = re.sub(r'^\\s*id\\s+[\\\'\\"]com\\.jfrog\\.bintray[\\\'\\"][^\\n]*\\n', '', text, flags=re.M)
+              updated = re.sub(r'^\\s*id\\s+[\\\'\\"]com\\.github\\.dcendents\\.android-maven[\\\'\\"][^\\n]*\\n', '', updated, flags=re.M)
+              updated = re.sub(r'^\\s*apply\\s+from:\\s*[\\\'\\"][^\\\'\\"]*bintray-publish\\.gradle[\\\'\\"][^\\n]*\\n', '', updated, flags=re.M)
+              if updated != text:
+                  path.write_text(updated)
+                  changed.append(str(path))
+          print("\\n".join(changed) if changed else "No obsolete Bintray plugins found")
+          PY
+
       - name: Build debug APK
         working-directory: vendor/Andacious
         run: |
