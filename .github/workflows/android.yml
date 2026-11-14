@@ -25,10 +25,19 @@ jobs:
           git clone --depth 1 https://github.com/CypherpunkArmory/Andacious.git vendor/Andacious
           test -f vendor/Andacious/gradlew
 
-      - name: Download public UserLAnd runtime source
+      - name: Download matching UserLAnd runtime source
         run: |
           rm -rf vendor/Andacious/UserLAndLibrary
-          git clone --depth 1 --recurse-submodules https://github.com/pp-sepag/UserLAndLibrary.git vendor/Andacious/UserLAndLibrary
+          mkdir -p vendor/Andacious/UserLAndLibrary
+          if git -C vendor/Andacious/UserLAndLibrary init && \
+             git -C vendor/Andacious/UserLAndLibrary remote add origin https://github.com/CypherpunkArmory/UserLAndLibrary.git && \
+             git -C vendor/Andacious/UserLAndLibrary fetch --depth 1 origin 513c819aafd62cb6a1028a6dfba8d0bb02c3904f && \
+             git -C vendor/Andacious/UserLAndLibrary checkout FETCH_HEAD; then
+            git -C vendor/Andacious/UserLAndLibrary submodule update --init --recursive || true
+          else
+            rm -rf vendor/Andacious/UserLAndLibrary
+            git clone --depth 1 --recurse-submodules https://github.com/pp-sepag/UserLAndLibrary.git vendor/Andacious/UserLAndLibrary
+          fi
           test -f vendor/Andacious/UserLAndLibrary/app/build.gradle
 
       - name: Restore FreeRDP Android core source
