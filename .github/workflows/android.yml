@@ -251,7 +251,7 @@ jobs:
           import re
           module_gradle = root / "UserLAndLibrary/app/build.gradle"
           module_source = module_gradle.read_text()
-          module_source, count = re.subn(r"(?ms)^androidExtensions\\s*\\{.*?^\\}\\s*", "", module_source, count=1)
+          module_source, count = re.subn(r"(?ms)^androidExtensions\s*\{.*?^\}\s*", "", module_source, count=1)
           if count != 1:
               raise SystemExit("Could not remove obsolete androidExtensions DSL block")
           module_gradle.write_text(module_source)
