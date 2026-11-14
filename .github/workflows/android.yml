@@ -20,11 +20,16 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Download Andacious Android base
+      - name: Download Android compatibility layer
         run: |
-          git clone --depth 1 --recurse-submodules https://github.com/CypherpunkArmory/Andacious.git vendor/Andacious
+          git clone --depth 1 https://github.com/CypherpunkArmory/Andacious.git vendor/Andacious
           test -f vendor/Andacious/gradlew
-          test -f vendor/Andacious/app/src/main/assets/apps/andacious/andacious.sh
+
+      - name: Download public UserLAnd runtime source
+        run: |
+          rm -rf vendor/Andacious/UserLAndLibrary
+          git clone --depth 1 --recurse-submodules https://github.com/pp-sepag/UserLAndLibrary.git vendor/Andacious/UserLAndLibrary
+          test -f vendor/Andacious/UserLAndLibrary/app/build.gradle
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
