@@ -283,6 +283,9 @@ jobs:
                   raise SystemExit("Could not configure Kotlin JVM target in Android module")
           if "kotlin-android-extensions" not in app_source:
               app_source = app_source.replace("apply plugin: 'kotlin-android'\n", "apply plugin: 'kotlin-android'\n\napply plugin: 'kotlin-android-extensions'\n", 1)
+          # Kapt creates a separate Kotlin stub task; set its bytecode target explicitly.
+          if "kaptGenerateStubs" not in app_source:
+              app_source += "\\ntasks.matching { it.name.startsWith('kaptGenerateStubs') }.configureEach { kotlinOptions.jvmTarget = '1.8' }\\n"
           app_gradle.write_text(app_source)
 
           # Restore the legacy DSL, now that the compiler is explicitly pinned to Kotlin 1.8.22.
