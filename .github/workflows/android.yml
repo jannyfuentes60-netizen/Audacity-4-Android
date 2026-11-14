@@ -5,7 +5,6 @@ on:
   push:
     branches: [main]
     paths:
-      - ".gitmodules"
       - "packaging/**"
       - ".github/workflows/android.yml"
       - "README.md"
@@ -18,10 +17,14 @@ jobs:
     name: Build Audacity 4 Android
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout project and submodules
+      - name: Checkout project
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Download Andacious Android base
+        run: |
+          git clone --depth 1 --recurse-submodules https://github.com/CypherpunkArmory/Andacious.git vendor/Andacious
+          test -f vendor/Andacious/gradlew
+          test -f vendor/Andacious/app/src/main/assets/apps/andacious/andacious.sh
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -32,14 +35,10 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Verify Andacious submodule
-        run: |
-          test -f vendor/Andacious/gradlew
-          test -f vendor/Andacious/app/src/main/assets/apps/andacious/andacious.sh
-
-      - name: Inject Audacity 4.0.2 launcher
+      - name: Inject Audacity 4.0.2 launcher and app name
         run: |
           install -m 0755 packaging/andacious.sh vendor/Andacious/app/src/main/assets/apps/andacious/andacious.sh
+          sed -i 's#<string name="app_name">Andacious</string>#<string name="app_name">Audacity 4 Android</string>#' vendor/Andacious/app/src/main/res/values/strings.xml
 
       - name: Build debug APK
         working-directory: vendor/Andacious
