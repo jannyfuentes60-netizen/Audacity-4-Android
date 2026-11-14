@@ -224,7 +224,7 @@ jobs:
               if not gradle.exists():
                   continue
               source = gradle.read_text()
-              source = re.sub(r"kotlin_version\s*=\s*(['\"])1\.[^'\"]+\1", "kotlin_version = '1.7.22'", source)
+              source = re.sub(r"kotlin_version\s*=\s*(['\"])1\.[^'\"]+\1", "kotlin_version = '1.9.21'", source)
               gradle.write_text(source)
 
           # AGP 8 disables BuildConfig generation by default in library modules.
@@ -240,7 +240,11 @@ jobs:
                   if not count:
                       raise SystemExit("Could not locate android block to enable BuildConfig")
               module.write_text(source)
-          print("BuildConfig generation enabled for UserLAndLibrary/app")
+
+          app_gradle = root / "UserLAndLibrary/app/build.gradle"
+          app_source = app_gradle.read_text().replace("def kotlin_jdk_version = '1.5.10'", "def kotlin_jdk_version = '1.9.21'")
+          app_gradle.write_text(app_source)
+          print("BuildConfig enabled; Kotlin plugin and stdlib aligned at 1.9.21")
           PY
 
       - name: Build debug APK
