@@ -244,7 +244,7 @@ jobs:
           app_gradle = root / "UserLAndLibrary/app/build.gradle"
           app_source = app_gradle.read_text()
           if "kotlinOptions {" not in app_source:
-              app_source, count = re.subn(r"(android\\s*\\{)", r"\\1\\n    kotlinOptions { jvmTarget = '1.8' }", app_source, count=1)
+              app_source, count = re.subn(r"(android\s*\{)", r"\1\n    kotlinOptions { jvmTarget = '1.8' }", app_source, count=1)
               if not count:
                   raise SystemExit("Could not configure Kotlin JVM target in Android module")
           if "kotlin-android-extensions" not in app_source:
