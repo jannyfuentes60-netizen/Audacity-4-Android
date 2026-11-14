@@ -112,13 +112,14 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           path = Path("vendor/Andacious/UserLAndLibrary/termux-app/app/src/main/java/com/termux/app/TermuxHelpActivity.java")
           source = path.read_text()
-          source, count = re.subn(r"^\\s*settings\\.setAppCacheEnabled\\(false\\);\\s*$", "", source, flags=re.MULTILINE)
-          if count != 1:
-              raise SystemExit(f"Expected one obsolete WebView AppCache call, found {count}")
-          path.write_text(source)
+          lines = source.splitlines()
+          matches = [line for line in lines if "setAppCacheEnabled(false)" in line]
+          if len(matches) != 1:
+              raise SystemExit(f"Expected one obsolete WebView AppCache call, found {len(matches)}")
+          lines = [line for line in lines if "setAppCacheEnabled(false)" not in line]
+          path.write_text(chr(10).join(lines) + chr(10))
           PY
 
       - name: Set up Java 17
