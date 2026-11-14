@@ -252,21 +252,6 @@ jobs:
               app_source += "\n\nandroidExtensions {\n    experimental = true\n}\n"
               app_gradle.write_text(app_source)
 
-          # Convert old Parcelize imports and enable the replacement plugin only when needed.
-          for source_file in (root / "UserLAndLibrary/app/src").rglob("*.kt"):
-              kotlin_source = source_file.read_text(errors="replace")
-              updated = kotlin_source.replace("kotlinx.android.parcel.Parcelize", "kotlinx.parcelize.Parcelize")
-              if updated != kotlin_source:
-                  source_file.write_text(updated)
-              if "@Parcelize" in updated:
-                  app_source = app_gradle.read_text()
-                  if "apply plugin: 'kotlin-parcelize'" not in app_source:
-                      app_gradle.write_text(app_source + "\napply plugin: 'kotlin-parcelize'\n")
-          app_source = app_gradle.read_text().replace("def kotlin_jdk_version = '1.5.10'", "def kotlin_jdk_version = '1.9.21'")
-          if "kotlinOptions { jvmTarget = '1.8' }" not in app_source:
-              app_source += "\n\ntasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { kotlinOptions { jvmTarget = '1.8' } }\n"
-          app_gradle.write_text(app_source)
-          print("BuildConfig enabled; Kotlin plugin, stdlib, and JVM target aligned")
           PY
 
       - name: Build debug APK
