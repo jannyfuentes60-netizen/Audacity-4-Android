@@ -97,6 +97,17 @@ jobs:
           print("\n".join(changed) if changed else "No obsolete Bintray plugins found")
           PY
 
+      - name: Update obsolete JaCoCo report DSL
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("vendor/Andacious/UserLAndLibrary/app/build.gradle")
+          source = path.read_text()
+          source = source.replace("xml.enabled = true", "xml.required.set(true)")
+          source = source.replace("html.enabled = true", "html.required.set(true)")
+          path.write_text(source)
+          PY
+
       - name: Build debug APK
         working-directory: vendor/Andacious
         run: |
