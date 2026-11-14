@@ -224,7 +224,7 @@ jobs:
               if not gradle.exists():
                   continue
               source = gradle.read_text()
-              source = re.sub(r"kotlin_version\s*=\s*(['"])[0-9][^'"]*\1", "kotlin_version = '1.9.21'", source)
+              source = re.sub(r"""kotlin_version\s*=\s*(['"])[0-9][^'"]*\1""", "kotlin_version = '1.9.21'", source)
               gradle.write_text(source)
 
           # AGP 8 disables BuildConfig generation by default in library modules.
@@ -251,15 +251,6 @@ jobs:
           if "androidExtensions {" not in app_source:
               app_source += "\n\nandroidExtensions {\n    experimental = true\n}\n"
               app_gradle.write_text(app_source)
-
-          # Remove the matching obsolete androidExtensions DSL block from the module script.
-          import re
-          module_gradle = root / "UserLAndLibrary/app/build.gradle"
-          module_source = module_gradle.read_text()
-          module_source, count = re.subn(r"(?ms)^androidExtensions\s*\{.*?^\}\s*", "", module_source, count=1)
-          if count != 1:
-              raise SystemExit("Could not remove obsolete androidExtensions DSL block")
-          module_gradle.write_text(module_source)
 
           # Convert old Parcelize imports and enable the replacement plugin only when needed.
           for source_file in (root / "UserLAndLibrary/app/src").rglob("*.kt"):
