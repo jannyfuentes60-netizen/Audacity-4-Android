@@ -47,6 +47,37 @@ jobs:
           install -m 0755 packaging/andacious.sh vendor/Andacious/app/src/main/assets/apps/andacious/andacious.sh
           sed -i 's#<string name="app_name">Andacious</string>#<string name="app_name">Audacity 4 Android</string>#' vendor/Andacious/app/src/main/res/values/strings.xml
 
+      - name: Patch legacy Android module namespaces
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+
+          root = Path("vendor/Andacious")
+          patched = []
+          for gradle in root.rglob("build.gradle"):
+              source = gradle.read_text(errors="replace")
+              if "com.android.library" not in source and "com.android.application" not in source:
+                  continue
+              if re.search(r"\\bnamespace\\s*[= ]", source):
+                  continue
+              manifest = gradle.parent / "src/main/AndroidManifest.xml"
+              if not manifest.exists():
+                  continue
+              try:
+                  package = ET.parse(manifest).getroot().attrib.get("package")
+              except ET.ParseError:
+                  continue
+              if not package:
+                  continue
+              updated, count = re.subn(r"(android\\s*\\{)", r"\\1\\n    namespace '" + package + "'", source, count=1)
+              if count:
+                  gradle.write_text(updated)
+                  patched.append(f"{gradle}: {package}")
+          print("\\n".join(patched) if patched else "No legacy Android namespaces required patching")
+          PY
+
       - name: Build debug APK
         working-directory: vendor/Andacious
         run: |
