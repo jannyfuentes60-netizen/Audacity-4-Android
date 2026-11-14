@@ -243,8 +243,10 @@ jobs:
 
           app_gradle = root / "UserLAndLibrary/app/build.gradle"
           app_source = app_gradle.read_text().replace("def kotlin_jdk_version = '1.5.10'", "def kotlin_jdk_version = '1.9.21'")
+          if "kotlinOptions { jvmTarget = '1.8' }" not in app_source:
+              app_source += "\n\ntasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { kotlinOptions { jvmTarget = '1.8' } }\n"
           app_gradle.write_text(app_source)
-          print("BuildConfig enabled; Kotlin plugin and stdlib aligned at 1.9.21")
+          print("BuildConfig enabled; Kotlin plugin, stdlib, and JVM target aligned")
           PY
 
       - name: Build debug APK
