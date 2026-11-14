@@ -84,13 +84,14 @@ jobs:
           from pathlib import Path
           import re
           root = Path("vendor/Andacious")
+          markers = ("com.jfrog.bintray", "com.github.dcendents.android-maven", "bintray-publish.gradle")
           changed = []
           for path in root.rglob("build.gradle"):
-              text = path.read_text(errors="replace")
-              updated = re.sub(r'^\\s*id\\s+[\\\'\\"]com\\.jfrog\\.bintray[\\\'\\"][^\\n]*\\n', '', text, flags=re.M)
-              updated = re.sub(r'^\\s*id\\s+[\\\'\\"]com\\.github\\.dcendents\\.android-maven[\\\'\\"][^\\n]*\\n', '', updated, flags=re.M)
-              updated = re.sub(r'^\\s*apply\\s+from:\\s*[\\\'\\"][^\\\'\\"]*bintray-publish\\.gradle[\\\'\\"][^\\n]*\\n', '', updated, flags=re.M)
-              if updated != text:
+              original = path.read_text(errors="replace")
+              lines = [line for line in original.splitlines() if not any(marker in line for marker in markers)]
+              updated = "\\n".join(lines) + "\\n"
+              updated = re.sub(r"(?ms)^\\s*plugins\\s*\\{\\s*\\}\\s*", "", updated)
+              if updated != original:
                   path.write_text(updated)
                   changed.append(str(path))
           print("\\n".join(changed) if changed else "No obsolete Bintray plugins found")
