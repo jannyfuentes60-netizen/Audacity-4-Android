@@ -140,7 +140,7 @@ jobs:
           old = "def moshi_version = '1.12.0'"
           if old not in source:
               raise SystemExit("Could not find pinned Moshi version")
-          path.write_text(source.replace(old, "def moshi_version = '1.15.1'", 1))
+          path.write_text(source.replace(old, "def moshi_version = '1.14.0'", 1))
           PY
 
       - name: Set up Java 17
@@ -233,16 +233,24 @@ jobs:
               if not gradle.exists():
                   continue
               source = gradle.read_text()
-              source = re.sub(r"""kotlin_version\s*=\s*(['"])[0-9][^'"]*\1""", "kotlin_version = '1.9.21'", source)
-              source = source.replace('classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"', 'classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21"')
+              source = re.sub(r"""kotlin_version\s*=\s*(['"])[0-9][^'"]*\1""", "kotlin_version = '1.8.22'", source)
+              source = source.replace('classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"', 'classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22"')
               gradle.write_text(source)
+
+          # Pin any nested Kotlin buildscript declarations as well.
+          for gradle in root.rglob("build.gradle"):
+              source = gradle.read_text(errors="replace")
+              source = source.replace('org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version', 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22')
+              source = re.sub(r'org.jetbrains.kotlin:kotlin-gradle-plugin:[0-9.]+', 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22', source)
+              gradle.write_text(source)
+          print("Pinned all Kotlin Gradle plugin declarations to 1.8.22")
 
           # Force every Kotlin compiler/plugin artifact to the K1-compatible version
           # required by the legacy UserLAnd Android Extensions source.
           root_build = root / "build.gradle"
           root_source = root_build.read_text()
-          force_line = "    configurations.classpath.resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21', 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.21'\\n"
-          if "kotlin-compiler-embeddable:1.9.21" not in root_source:
+          force_line = "    configurations.classpath.resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22', 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.22'\\n"
+          if "kotlin-compiler-embeddable:1.8.22" not in root_source:
               root_source = root_source.replace("buildscript {\\n", "buildscript {\\n" + force_line, 1)
               root_build.write_text(root_source)
 
@@ -277,7 +285,7 @@ jobs:
               app_source = app_source.replace("apply plugin: 'kotlin-android'\n", "apply plugin: 'kotlin-android'\n\napply plugin: 'kotlin-android-extensions'\n", 1)
           app_gradle.write_text(app_source)
 
-          # Restore the legacy DSL, now that the compiler is explicitly pinned to Kotlin 1.9.21.
+          # Restore the legacy DSL, now that the compiler is explicitly pinned to Kotlin 1.8.22.
           if "androidExtensions {" not in app_source:
               app_source += "\n\nandroidExtensions {\n    experimental = true\n}\n"
               app_gradle.write_text(app_source)
