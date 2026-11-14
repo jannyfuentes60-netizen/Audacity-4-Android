@@ -60,7 +60,7 @@ jobs:
               source = gradle.read_text(errors="replace")
               if "com.android.library" not in source and "com.android.application" not in source:
                   continue
-              if re.search(r"\\bnamespace\\s*[= ]", source):
+              if re.search(r"\bnamespace\s*[= ]", source):
                   continue
               manifest = gradle.parent / "src/main/AndroidManifest.xml"
               if not manifest.exists():
@@ -71,11 +71,11 @@ jobs:
                   continue
               if not package:
                   continue
-              updated, count = re.subn(r"(android\\s*\\{)", r"\\1\\n    namespace '" + package + "'", source, count=1)
+              updated, count = re.subn(r"(android\s*\{)", r"\1\n    namespace '" + package + "'", source, count=1)
               if count:
                   gradle.write_text(updated)
                   patched.append(f"{gradle}: {package}")
-          print("\\n".join(patched) if patched else "No legacy Android namespaces required patching")
+          print("\n".join(patched) if patched else "No legacy Android namespaces required patching")
           PY
 
       - name: Build debug APK
