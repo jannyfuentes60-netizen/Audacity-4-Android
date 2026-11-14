@@ -108,6 +108,19 @@ jobs:
           java.write_text(source)
           PY
 
+      - name: Remove obsolete Android WebView AppCache API
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("vendor/Andacious/UserLAndLibrary/termux-app/app/src/main/java/com/termux/app/TermuxHelpActivity.java")
+          source = path.read_text()
+          source, count = re.subn(r"^\\s*settings\\.setAppCacheEnabled\\(false\\);\\s*$", "", source, flags=re.MULTILINE)
+          if count != 1:
+              raise SystemExit(f"Expected one obsolete WebView AppCache call, found {count}")
+          path.write_text(source)
+          PY
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
