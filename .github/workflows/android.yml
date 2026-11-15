@@ -251,7 +251,7 @@ jobs:
           root_source = root_build.read_text()
           force_line = "    configurations.classpath.resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22', 'org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.22'\\n"
           if "kotlin-compiler-embeddable:1.8.22" not in root_source:
-              root_source = root_source.replace("buildscript {\\n", "buildscript {\\n" + force_line, 1)
+              root_source = root_source.replace("buildscript {", "buildscript {\\n" + force_line, 1)
               root_build.write_text(root_source)
 
           # Keep the legacy K1 compiler path; Android Extensions is incompatible with K2.
